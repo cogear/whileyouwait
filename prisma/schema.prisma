@@ -21,6 +21,9 @@ model Client {
   stripeSubscriptionId String?      @map("stripe_subscription_id") @db.VarChar(255)
   paymentStatus        String       @default("unpaid") @map("payment_status") @db.VarChar(50)
   siteStatus           String       @default("building") @map("site_status") @db.VarChar(50)
+  githubRepo           String?      @map("github_repo") @db.VarChar(255)
+  vercelProjectId      String?      @map("vercel_project_id") @db.VarChar(255)
+  lastDeployedAt       DateTime?    @map("last_deployed_at")
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
   siteContent          SiteContent?

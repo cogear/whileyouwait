@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Eye, Save, Sparkles, Loader2, Paintbrush, RefreshCw } from "lucide-react"
+import { ArrowLeft, Eye, Save, Sparkles, Loader2, Paintbrush, RefreshCw, Rocket, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
 import { getSiteContent, saveSiteContent, saveSiteDesign } from "@/lib/actions/site"
 import { generateSiteContent, generateSiteDesign } from "@/lib/actions/generate"
+import { deploySite, getDeployStatus } from "@/lib/actions/deploy"
 import ImageUpload from "./ImageUpload"
 import BusinessHoursEditor, { type BusinessHours } from "./BusinessHoursEditor"
 import ServicesEditor, { type Service } from "./ServicesEditor"
@@ -40,9 +41,16 @@ export default function SiteBuilder({ client }: { client: Client }) {
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generatingDesign, setGeneratingDesign] = useState(false)
+  const [deploying, setDeploying] = useState(false)
   const [siteContentId, setSiteContentId] = useState<number | null>(null)
   const [images, setImages] = useState<SiteImage[]>([])
   const [hasDesign, setHasDesign] = useState(false)
+  const [deployStatus, setDeployStatus] = useState<{
+    deployed: boolean
+    url: string | null
+    lastDeployedAt: Date | null
+    hasUnpushedChanges: boolean
+  } | null>(null)
 
   const [tagline, setTagline] = useState("")
   const [description, setDescription] = useState("")
@@ -85,6 +93,8 @@ export default function SiteBuilder({ client }: { client: Client }) {
         setPreviewCss(content.cssContent)
       }
     }
+    const status = await getDeployStatus(client.id)
+    setDeployStatus(status)
   }, [client.id])
 
   useEffect(() => {
@@ -215,6 +225,28 @@ export default function SiteBuilder({ client }: { client: Client }) {
       toast.error("Design generation failed")
     }
     setGeneratingDesign(false)
+  }
+
+  async function handleDeploy() {
+    if (!hasDesign) {
+      toast.error("Generate a design first before deploying")
+      return
+    }
+    setDeploying(true)
+    try {
+      const result = await deploySite(client.id)
+      if (result.success) {
+        toast.success(`Site deployed to ${result.url}`)
+        const status = await getDeployStatus(client.id)
+        setDeployStatus(status)
+        router.refresh()
+      } else {
+        toast.error(result.error)
+      }
+    } catch {
+      toast.error("Deployment failed")
+    }
+    setDeploying(false)
   }
 
   return (
@@ -500,6 +532,86 @@ export default function SiteBuilder({ client }: { client: Client }) {
             </div>
           )}
         </section>
+
+        {/* Deploy & Publish */}
+        {hasDesign && (
+          <section className="rounded-xl border-2 border-green-500/30 bg-green-500/5 p-6">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+              <Rocket className="h-5 w-5 text-green-600" />
+              Deploy &amp; Publish
+            </h3>
+
+            {deployStatus?.deployed && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-green-600">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Live
+                </span>
+                {deployStatus.url && (
+                  <a
+                    href={deployStatus.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-accent hover:underline"
+                  >
+                    {deployStatus.url} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {deployStatus.lastDeployedAt && (
+                  <span className="text-muted">
+                    Last deployed{" "}
+                    {new Date(deployStatus.lastDeployedAt).toLocaleString()}
+                  </span>
+                )}
+                {deployStatus.hasUnpushedChanges && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-amber-600">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Content updated since last deploy
+                  </span>
+                )}
+              </div>
+            )}
+
+            <p className="mb-4 text-sm text-muted">
+              {deployStatus?.deployed
+                ? "Push your latest design changes to the live site."
+                : "Deploy this site to its own URL. Creates a GitHub repo and Vercel project automatically."}
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeploy}
+                disabled={deploying}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+              >
+                {deploying ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : deployStatus?.deployed ? (
+                  <RefreshCw className="h-4 w-4" />
+                ) : (
+                  <Rocket className="h-4 w-4" />
+                )}
+                {deploying
+                  ? "Deploying..."
+                  : deployStatus?.deployed
+                    ? "Redeploy"
+                    : "Deploy to Vercel"}
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-muted">
+              Preview always available at{" "}
+              <a
+                href={`/sites/${client.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline"
+              >
+                /sites/{client.slug}
+              </a>
+            </p>
+          </section>
+        )}
 
         {/* Bottom save */}
         <div className="flex justify-end gap-2">
