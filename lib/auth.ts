@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -16,6 +15,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!email || !password) return null
         if (email !== process.env.ADMIN_EMAIL) return null
 
+        const bcrypt = await import("bcryptjs")
         const isValid = await bcrypt.compare(
           password,
           process.env.ADMIN_PASSWORD_HASH!
