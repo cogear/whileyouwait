@@ -1,4 +1,5 @@
 import { ArrowRight, Zap } from "lucide-react"
+import Image from "next/image"
 
 export default function Hero() {
   return (
@@ -59,31 +60,16 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Decorative card mockup */}
-          <div className="relative hidden lg:block">
-            <div className="rounded-2xl border border-border bg-background p-6 shadow-2xl">
-              <div className="mb-4 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-danger" />
-                <div className="h-3 w-3 rounded-full bg-warning" />
-                <div className="h-3 w-3 rounded-full bg-success" />
-              </div>
-              <div className="space-y-3">
-                <div className="h-8 w-3/4 rounded bg-accent-light" />
-                <div className="h-4 w-full rounded bg-muted-bg" />
-                <div className="h-4 w-5/6 rounded bg-muted-bg" />
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div className="h-24 rounded-lg bg-accent-light" />
-                  <div className="h-24 rounded-lg bg-accent-light" />
-                </div>
-                <div className="h-4 w-2/3 rounded bg-muted-bg" />
-                <div className="h-10 w-1/3 rounded-lg bg-accent" />
-              </div>
-            </div>
-            {/* Floating badge */}
-            <div className="absolute -bottom-4 -left-4 rounded-xl border border-border bg-background px-4 py-3 shadow-lg">
-              <p className="text-sm font-semibold text-success">Site is Live!</p>
-              <p className="text-xs text-muted">yourbiz.whileuwaitwebsite.com</p>
-            </div>
+          {/* Logo */}
+          <div className="flex justify-center lg:justify-end">
+            <Image
+              src="/logo.png"
+              alt="While U Wait Website logo"
+              width={500}
+              height={502}
+              priority
+              className="w-full max-w-[400px] lg:max-w-[500px]"
+            />
           </div>
         </div>
       </div>

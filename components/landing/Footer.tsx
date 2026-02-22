@@ -1,4 +1,5 @@
 import { Mail, Instagram, Facebook, Twitter } from "lucide-react"
+import Image from "next/image"
 
 export default function Footer() {
   return (
@@ -6,11 +7,20 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex flex-col items-center gap-8 sm:flex-row sm:justify-between">
           {/* Brand */}
-          <div>
-            <h3 className="text-xl font-extrabold">While U Wait Website</h3>
-            <p className="mt-1 text-sm text-muted">
-              Custom websites, built on the spot.
-            </p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="While U Wait Website"
+              width={48}
+              height={48}
+              className="h-12 w-12"
+            />
+            <div>
+              <h3 className="text-xl font-extrabold">While U Wait Website</h3>
+              <p className="mt-0.5 text-sm text-muted">
+                Custom websites, built on the spot.
+              </p>
+            </div>
           </div>
 
           {/* Contact */}

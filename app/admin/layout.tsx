@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 
 export default async function AdminLayout({
   children,
@@ -14,8 +15,9 @@ export default async function AdminLayout({
       <nav className="border-b border-border bg-background px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-xl font-bold">
-              While U Wait Admin
+            <a href="/admin" className="flex items-center gap-2 text-xl font-bold">
+              <Image src="/logo.png" alt="" width={32} height={32} className="h-8 w-8" />
+              Admin
             </a>
             <a
               href="/"
