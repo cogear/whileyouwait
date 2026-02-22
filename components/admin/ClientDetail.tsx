@@ -13,6 +13,7 @@ import {
   Trash2,
   CreditCard,
   Link2,
+  Hammer,
 } from "lucide-react"
 
 type Client = {
@@ -101,6 +102,13 @@ export default function ClientDetail({ client }: { client: Client }) {
             <p className="mt-1 font-mono text-sm text-muted">{client.slug}</p>
           </div>
           <div className="flex gap-2">
+            <a
+              href={`/admin?build=${client.slug}`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              <Hammer className="h-4 w-4" />
+              Build Site
+            </a>
             <a
               href={`/admin?edit=${client.slug}`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted-bg"

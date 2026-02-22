@@ -2,11 +2,12 @@ import { getClients, getClient } from "@/lib/actions/clients"
 import ClientTable from "@/components/admin/ClientTable"
 import ClientForm from "@/components/admin/ClientForm"
 import ClientDetail from "@/components/admin/ClientDetail"
+import SiteBuilder from "@/components/admin/SiteBuilder"
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ action?: string; edit?: string; view?: string }>
+  searchParams: Promise<{ action?: string; edit?: string; view?: string; build?: string }>
 }) {
   const params = await searchParams
   const clients = await getClients()
@@ -18,6 +19,11 @@ export default async function AdminPage({
   if (params.edit) {
     const client = await getClient(params.edit)
     if (client) return <ClientForm client={client} />
+  }
+
+  if (params.build) {
+    const client = await getClient(params.build)
+    if (client) return <SiteBuilder client={client} />
   }
 
   if (params.view) {

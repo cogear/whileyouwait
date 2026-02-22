@@ -8,21 +8,58 @@ datasource db {
 }
 
 model Client {
-  id                   Int      @id @default(autoincrement())
-  businessName         String   @map("business_name") @db.VarChar(255)
-  clientName           String?  @map("client_name") @db.VarChar(255)
-  clientEmail          String?  @map("client_email") @db.VarChar(255)
-  clientPhone          String?  @map("client_phone") @db.VarChar(50)
-  slug                 String   @unique @db.VarChar(255)
-  siteUrl              String?  @map("site_url") @db.VarChar(500)
-  customDomain         String?  @map("custom_domain") @db.VarChar(255)
-  notes                String?  @db.Text
-  stripeCustomerId     String?  @map("stripe_customer_id") @db.VarChar(255)
-  stripeSubscriptionId String?  @map("stripe_subscription_id") @db.VarChar(255)
-  paymentStatus        String   @default("unpaid") @map("payment_status") @db.VarChar(50)
-  siteStatus           String   @default("building") @map("site_status") @db.VarChar(50)
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  id                   Int          @id @default(autoincrement())
+  businessName         String       @map("business_name") @db.VarChar(255)
+  clientName           String?      @map("client_name") @db.VarChar(255)
+  clientEmail          String?      @map("client_email") @db.VarChar(255)
+  clientPhone          String?      @map("client_phone") @db.VarChar(50)
+  slug                 String       @unique @db.VarChar(255)
+  siteUrl              String?      @map("site_url") @db.VarChar(500)
+  customDomain         String?      @map("custom_domain") @db.VarChar(255)
+  notes                String?      @db.Text
+  stripeCustomerId     String?      @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?      @map("stripe_subscription_id") @db.VarChar(255)
+  paymentStatus        String       @default("unpaid") @map("payment_status") @db.VarChar(50)
+  siteStatus           String       @default("building") @map("site_status") @db.VarChar(50)
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+  siteContent          SiteContent?
 
   @@map("clients")
+}
+
+model SiteContent {
+  id             Int         @id @default(autoincrement())
+  clientId       Int         @unique @map("client_id")
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tagline        String?     @db.VarChar(255)
+  description    String?     @db.Text
+  stylePreset    String      @default("modern") @map("style_preset") @db.VarChar(50)
+  primaryColor   String      @default("#2563eb") @map("primary_color") @db.VarChar(20)
+  secondaryColor String      @default("#f97316") @map("secondary_color") @db.VarChar(20)
+  phone          String?     @db.VarChar(50)
+  email          String?     @db.VarChar(255)
+  address        String?     @db.Text
+  businessHours  Json?       @map("business_hours")
+  services       Json?
+  socialLinks    Json?       @map("social_links")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  images         SiteImage[]
+
+  @@map("site_content")
+}
+
+model SiteImage {
+  id            Int         @id @default(autoincrement())
+  siteContentId Int         @map("site_content_id")
+  siteContent   SiteContent @relation(fields: [siteContentId], references: [id], onDelete: Cascade)
+  s3Key         String      @map("s3_key") @db.VarChar(500)
+  url           String      @db.VarChar(1000)
+  role          String      @db.VarChar(50)
+  altText       String?     @map("alt_text") @db.VarChar(255)
+  sortOrder     Int         @default(0) @map("sort_order")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("site_images")
 }
