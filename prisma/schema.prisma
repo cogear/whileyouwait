@@ -43,6 +43,8 @@ model SiteContent {
   businessHours  Json?       @map("business_hours")
   services       Json?
   socialLinks    Json?       @map("social_links")
+  htmlContent    String?     @map("html_content") @db.Text
+  cssContent     String?     @map("css_content") @db.Text
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   images         SiteImage[]

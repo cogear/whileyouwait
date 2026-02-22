@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { getSiteContentBySlug } from "@/lib/actions/site"
+import { sanitizeHtml, sanitizeCss } from "@/lib/sanitize"
 import SiteHero from "@/components/sites/SiteHero"
 import SiteAbout from "@/components/sites/SiteAbout"
 import SiteServices from "@/components/sites/SiteServices"
@@ -60,6 +61,19 @@ export default async function ClientSitePage({ params }: Props) {
   const site = await getSiteContentBySlug(slug)
   if (!site) notFound()
 
+  // AI-generated custom design path
+  if (site.htmlContent && site.cssContent) {
+    const cleanHtml = sanitizeHtml(site.htmlContent)
+    const cleanCss = sanitizeCss(site.cssContent)
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: cleanCss }} />
+        <div dangerouslySetInnerHTML={{ __html: cleanHtml }} />
+      </>
+    )
+  }
+
+  // Fallback: component-based rendering for older sites
   const presetVars = STYLE_PRESETS[site.stylePreset] || STYLE_PRESETS.modern
   const cssVars = {
     ...presetVars,

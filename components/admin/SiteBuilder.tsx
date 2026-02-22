@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Eye, Save, Sparkles, Loader2 } from "lucide-react"
-import { getSiteContent, saveSiteContent } from "@/lib/actions/site"
-import { generateSiteContent } from "@/lib/actions/generate"
+import { ArrowLeft, Eye, Save, Sparkles, Loader2, Paintbrush, RefreshCw } from "lucide-react"
+import { getSiteContent, saveSiteContent, saveSiteDesign } from "@/lib/actions/site"
+import { generateSiteContent, generateSiteDesign } from "@/lib/actions/generate"
 import ImageUpload from "./ImageUpload"
 import BusinessHoursEditor, { type BusinessHours } from "./BusinessHoursEditor"
 import ServicesEditor, { type Service } from "./ServicesEditor"
@@ -39,8 +39,10 @@ export default function SiteBuilder({ client }: { client: Client }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [generatingDesign, setGeneratingDesign] = useState(false)
   const [siteContentId, setSiteContentId] = useState<number | null>(null)
   const [images, setImages] = useState<SiteImage[]>([])
+  const [hasDesign, setHasDesign] = useState(false)
 
   const [tagline, setTagline] = useState("")
   const [description, setDescription] = useState("")
@@ -55,6 +57,11 @@ export default function SiteBuilder({ client }: { client: Client }) {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
 
   const [businessType, setBusinessType] = useState("")
+
+  // Design preview
+  const [previewHtml, setPreviewHtml] = useState("")
+  const [previewCss, setPreviewCss] = useState("")
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const loadContent = useCallback(async () => {
     const content = await getSiteContent(client.id)
@@ -72,12 +79,35 @@ export default function SiteBuilder({ client }: { client: Client }) {
       setServices((content.services as Service[]) || [])
       setSocialLinks((content.socialLinks as SocialLink[]) || [])
       setImages(content.images)
+      if (content.htmlContent && content.cssContent) {
+        setHasDesign(true)
+        setPreviewHtml(content.htmlContent)
+        setPreviewCss(content.cssContent)
+      }
     }
   }, [client.id])
 
   useEffect(() => {
     loadContent()
   }, [loadContent])
+
+  // Update iframe preview when design changes
+  useEffect(() => {
+    if (!iframeRef.current || !previewHtml) return
+    const doc = iframeRef.current.contentDocument
+    if (!doc) return
+    doc.open()
+    doc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>${previewCss}</style>
+</head>
+<body>${previewHtml}</body>
+</html>`)
+    doc.close()
+  }, [previewHtml, previewCss])
 
   async function handleSave() {
     setSaving(true)
@@ -132,6 +162,61 @@ export default function SiteBuilder({ client }: { client: Client }) {
     setGenerating(false)
   }
 
+  async function handleGenerateDesign() {
+    if (!businessType.trim()) {
+      toast.error("Enter a business type above first")
+      return
+    }
+    if (!siteContentId) {
+      toast.error("Save your content first before generating a design")
+      return
+    }
+    setGeneratingDesign(true)
+    try {
+      const heroImage = images.find((i) => i.role === "hero")
+      const logo = images.find((i) => i.role === "logo")
+      const galleryImages = images.filter((i) => i.role === "gallery")
+
+      const result = await generateSiteDesign({
+        businessName: client.businessName,
+        businessType,
+        tagline,
+        description,
+        services,
+        phone,
+        email,
+        address,
+        businessHours: businessHours as Record<string, { open: string; close: string; closed: boolean }> | null,
+        socialLinks,
+        primaryColor,
+        secondaryColor,
+        heroImageUrl: heroImage?.url || null,
+        logoUrl: logo?.url || null,
+        galleryImageUrls: galleryImages.map((i) => i.url),
+      })
+
+      if (result.success) {
+        setPreviewHtml(result.html)
+        setPreviewCss(result.css)
+
+        // Save to database
+        await saveSiteDesign(client.id, {
+          htmlContent: result.html,
+          cssContent: result.css,
+        })
+
+        setHasDesign(true)
+        toast.success("Custom design generated and saved!")
+        router.refresh()
+      } else {
+        toast.error(result.error)
+      }
+    } catch {
+      toast.error("Design generation failed")
+    }
+    setGeneratingDesign(false)
+  }
+
   return (
     <div>
       <a
@@ -177,7 +262,7 @@ export default function SiteBuilder({ client }: { client: Client }) {
       </div>
 
       <div className="space-y-8">
-        {/* AI Generate */}
+        {/* AI Generate Content */}
         <section className="rounded-xl border border-accent/20 bg-accent/5 p-6">
           <h3 className="mb-3 flex items-center gap-2 font-semibold">
             <Sparkles className="h-5 w-5 text-accent" />
@@ -205,7 +290,7 @@ export default function SiteBuilder({ client }: { client: Client }) {
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              {generating ? "Generating..." : "Generate"}
+              {generating ? "Generating..." : "Generate Text"}
             </button>
           </div>
         </section>
@@ -362,6 +447,58 @@ export default function SiteBuilder({ client }: { client: Client }) {
         {/* Social Links */}
         <section className="rounded-xl border border-border bg-background p-6">
           <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} />
+        </section>
+
+        {/* AI Design Generator */}
+        <section className="rounded-xl border-2 border-dashed border-secondary/40 bg-secondary/5 p-6">
+          <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+            <Paintbrush className="h-5 w-5 text-secondary" />
+            AI Design Generator
+          </h3>
+          <p className="mb-4 text-sm text-muted">
+            Save your content above first, then generate a fully custom website design.
+            Claude will create unique HTML &amp; CSS with custom layout, typography, and colors.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleGenerateDesign}
+              disabled={generatingDesign || !siteContentId}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-secondary/90 disabled:opacity-50"
+            >
+              {generatingDesign ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : hasDesign ? (
+                <RefreshCw className="h-4 w-4" />
+              ) : (
+                <Paintbrush className="h-4 w-4" />
+              )}
+              {generatingDesign
+                ? "Generating Design..."
+                : hasDesign
+                  ? "Regenerate Design"
+                  : "Generate Design"}
+            </button>
+            {!siteContentId && (
+              <span className="self-center text-xs text-muted">
+                Save content first to enable design generation
+              </span>
+            )}
+          </div>
+
+          {/* Live Preview */}
+          {previewHtml && (
+            <div className="mt-6">
+              <h4 className="mb-2 text-sm font-medium">Live Preview</h4>
+              <div className="overflow-hidden rounded-lg border border-border bg-white">
+                <iframe
+                  ref={iframeRef}
+                  title="Site design preview"
+                  className="h-[600px] w-full border-0"
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Bottom save */}

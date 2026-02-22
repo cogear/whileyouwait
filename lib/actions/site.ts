@@ -39,6 +39,26 @@ export async function getSiteContentBySlug(slug: string) {
   }
 }
 
+export async function saveSiteDesign(
+  clientId: number,
+  data: { htmlContent: string; cssContent: string }
+) {
+  await requireAuth()
+
+  await prisma.siteContent.update({
+    where: { clientId },
+    data: {
+      htmlContent: data.htmlContent,
+      cssContent: data.cssContent,
+    },
+  })
+
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { slug: true } })
+  if (client) revalidatePath(`/sites/${client.slug}`)
+  revalidatePath("/admin")
+  return { success: true }
+}
+
 export async function saveSiteContent(
   clientId: number,
   data: {
