@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Client {
+  id                   Int      @id @default(autoincrement())
+  businessName         String   @map("business_name") @db.VarChar(255)
+  clientName           String?  @map("client_name") @db.VarChar(255)
+  clientEmail          String?  @map("client_email") @db.VarChar(255)
+  clientPhone          String?  @map("client_phone") @db.VarChar(50)
+  slug                 String   @unique @db.VarChar(255)
+  siteUrl              String?  @map("site_url") @db.VarChar(500)
+  customDomain         String?  @map("custom_domain") @db.VarChar(255)
+  notes                String?  @db.Text
+  stripeCustomerId     String?  @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?  @map("stripe_subscription_id") @db.VarChar(255)
+  paymentStatus        String   @default("unpaid") @map("payment_status") @db.VarChar(50)
+  siteStatus           String   @default("building") @map("site_status") @db.VarChar(50)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("clients")
+}
